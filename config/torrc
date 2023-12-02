@@ -1,0 +1,24 @@
+RunAsDaemon 0
+# We don't need an open SOCKS port.
+SocksPort 0
+BridgeRelay 1
+Nickname DockerObfs4Bridge
+Log notice file /var/log/tor/log
+Log notice stdout
+ServerTransportPlugin obfs4 exec /usr/bin/obfs4proxy
+ExtORPort auto
+DataDirectory /var/lib/tor
+
+HiddenserviceDir /var/lib/tor/hidden_service
+HiddenServicePort 80 127.0.0.1:80
+
+# The variable "OR_PORT" is replaced with the OR port.
+ORPort 5966
+
+# The variable "PT_PORT" is replaced with the obfs4 port.
+ServerTransportListenAddr obfs4 0.0.0.0:6346
+
+# The variable "EMAIL" is replaced with the operator's email address.
+ContactInfo arijit_bhowmick@outlook.com
+
+

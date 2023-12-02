@@ -1,0 +1,42 @@
+version: '3.4'
+services:
+  tor_gateway:
+    image: tor_gateway
+    container_name: tor_gateway_container
+    build:
+      context: ./tor
+      dockerfile: ./dockerfiles/Dockerfile
+    restart: unless-stopped
+    networks:
+      - obfs4_bridge_external_network
+    environment:
+      - SERVICE_NAME="tor_gateway"
+      # Exit with an error message if OR_PORT is unset or empty.
+      - OR_PORT=${OR_PORT:?Env var OR_PORT is not set.}
+      # - OR_PORT=80
+      # Exit with an error message if PT_PORT is unset or empty.
+      - PT_PORT=${PT_PORT:?Env var PT_PORT is not set.}
+      # - PT_PORT=8080
+      # Exit with an error message if EMAIL is unset or empty.
+      - EMAIL=${EMAIL:?Env var EMAIL is not set.}
+      # - EMAIL=arijit-bhowmick@outlook.com
+      # Nickname with default value: "DockerObfs4Bridge"
+      - NICKNAME=${NICKNAME:-DockerObfs4Bridge}
+      - HIDDEN_SERVICE_DIR_HOST=${HIDDEN_SERVICE_DIR_HOST:-127.0.0.1}
+      - HIDDEN_SERVICE_DIR_PORT=${HIDDEN_SERVICE_DIR_PORT:?Env var HIDDEN_SERVICE_DIR_PORT is not set.}
+      - HIDDEN_SERVICE_DIR_PATH=${HIDDEN_SERVICE_DIR_PATH:-/var/lib/tor/hidden_service}
+    env_file:
+      - .env
+    ports:
+      - 8089:${OR_PORT}
+      - 8090:${PT_PORT}
+    volumes:
+      - ./tor/config:/config:ro
+      - ./tor/sites:/sites:rw
+      - ./tor/scripts:/scripts:rw
+      - ./tor/config/torrc:/etc/tor/torrc:rw
+      - ./tor/scripts/entrypoint.sh:/entrypoint.sh:ro
+      - ${HIDDEN_DOMAINS_DIR_PATH:-./tor/hidden_service}/${HIDDEN_SERVICE_DOMAIN:-}:/var/lib/tor/hidden_service/:ro
+
+networks:
+  obfs4_bridge_external_network:

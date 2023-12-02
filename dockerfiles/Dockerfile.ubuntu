@@ -1,0 +1,65 @@
+# Use the official ubuntu base image from Docker Hub
+# This Dockerfile is used to build an headles vnc image based on Ubuntu:latest
+FROM ubuntu:22.04
+LABEL maintainer="sys41x4@gmail.com"
+MAINTAINER Arijit Bhowmick "sys41x4@gmail.com"
+ENV REFRESHED_AT 2023-10-14
+
+
+ENV TZ=Asia/Kolkata \
+    LANG='en_US.UTF-8' \
+    LANGUAGE='en_US:en' \
+    LC_ALL='en_US.UTF-8' \
+    DEBIAN_FRONTEND=noninteractive
+
+
+RUN mkdir -p /usr/local/bin /scripts /sites
+
+COPY scripts/ /scripts/
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+            curl \
+            wget \
+            python3 \
+            python3-pip \
+            python3-venv \
+            ca-certificates \
+            git
+
+                    
+## Set Keyboard type to US
+RUN echo "keyboard-configuration keyboard-configuration/layout select us" | debconf-set-selections
+
+# Add additional repositories
+RUN /scripts/debian/setup/repositories.sh
+
+# Install base packages
+RUN /scripts/debian/setup/base_pkgs.sh
+
+# Create Dir Structure
+RUN /scripts/common/setup/create_dir_structure.sh
+
+# Install tor service
+RUN /scripts/debian/setup/tor.sh
+COPY ./scripts/common/start-tor.sh /usr/local/bin
+RUN /bin/sh -c chmod 0755 /usr/local/bin/start-tor.sh # buildkit
+
+# Copy get-bridge-line
+COPY scripts/common/get-bridge-line /usr/local/bin
+RUN /bin/sh -c chmod 0755 /usr/local/bin/get-bridge-line # buildkit
+
+# Install OnionShare service
+RUN /scripts/common/setup/onionshare.sh
+
+RUN cp /scripts/entrypoint.sh /entrypoint.sh
+
+
+# Cleanup Tasks
+RUN /scripts/common/cleanup.sh
+
+USER tor-user
+
+# Start entrypoint in the foreground
+ENTRYPOINT "/entrypoint.sh"
+CMD ["--wait"]
